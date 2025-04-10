@@ -36,8 +36,8 @@
 ├── 📄 **Завдання №16.pdf** # Оригінал завдання
 
 ---
-📚 **Корисні ресурси:**
-• 🔗 [Завдання №16.pdf](https://drive.google.com/drive/folders/15T69hFH4xIQl6r3G8yE7_wZiSjjwCcbI?usp=drive_link)
+## 📚 **Корисні ресурси:**
+ • 🔗 [Завдання №16.pdf](https://drive.google.com/drive/folders/15T69hFH4xIQl6r3G8yE7_wZiSjjwCcbI?usp=drive_link)
 ---  
 ## ✍️ **Автор**
 Кривдюк Архип Валерійович — студент ІАТЕ КПІ
