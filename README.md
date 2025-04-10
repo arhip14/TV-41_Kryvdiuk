@@ -38,7 +38,7 @@
 ---
 
 ## 📚 **Корисні ресурси**
-  •🔗 [Опис завдання (PDF)](Завдання №16.pdf)
+  •🔗 [[(https://drive.google.com/drive/folders/15T69hFH4xIQl6r3G8yE7_wZiSjjwCcbI?usp=drive_link))](Завдання №16.pdf)
 
 ---  
 ## ✍️ **Автор**
