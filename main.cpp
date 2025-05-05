@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <iomanip>
+#include <fstream>
 
 using namespace std;
 
@@ -21,38 +22,38 @@ bool usedDominoes[7][7] = {false};
 
 int solutions = 0;
 
+ofstream outFile("solutions.txt");
+
 bool isValid(int row, int col) {
-    bool inBounds = (row >= 0 && row < ROWS && col >= 0 && col < COLS);
-    bool isNotBlocked = (grid[row][col] != -2);
-    bool isNotUsed = (!usedCell[row][col]);
-    return inBounds && isNotBlocked && isNotUsed;
+    return (row >= 0 && row < ROWS && col >= 0 && col < COLS && grid[row][col] != -2 && !usedCell[row][col]);
 }
 
-void printGrid() {
-    cout << "    ";
+void printGrid(ostream &out) {
+    out << "    ";
     for (int c = 0; c < COLS; ++c)
-        cout << setw(3) << c;
-    cout << "\n";
-    cout << "    ┌";
-    for (int c = 0; c < COLS; ++c) cout << "───";
-    cout << "┐\n";
+        out << setw(3) << c;
+    out << "\n    ┌";
+    for (int c = 0; c < COLS; ++c)
+        out << "───";
+    out << "┐\n";
 
     for (int r = 0; r < ROWS; ++r) {
-        cout << setw(3) << r << " │";
+        out << setw(3) << r << " │";
         for (int c = 0; c < COLS; ++c) {
             if (grid[r][c] == -2)
-                cout << "   "; 
+                out << "   ";
             else if (grid[r][c] == -1)
-                cout << " . "; 
+                out << " . ";
             else
-                cout << " " << grid[r][c] << " ";
+                out << " " << grid[r][c] << " ";
         }
-        cout << "│\n";
+        out << "│\n";
     }
 
-    cout << "    └";
-    for (int c = 0; c < COLS; ++c) cout << "───";
-    cout << "┘\n\n";
+    out << "    └";
+    for (int c = 0; c < COLS; ++c)
+        out << "───";
+    out << "┘\n\n";
 }
 
 void solve() {
@@ -60,7 +61,6 @@ void solve() {
 
     for (int row = 0; row < ROWS && !placed; ++row) {
         for (int col = 0; col < COLS && !placed; ++col) {
-
             if (!isValid(row, col)) continue;
 
             vector<pair<int, int> > directions;
@@ -68,11 +68,11 @@ void solve() {
             directions.push_back(make_pair(1, 0));
 
             for (int d = 0; d < directions.size(); ++d) {
-                int deltaRow = directions[d].first;
-                int deltaCol = directions[d].second;
+                int dirRow = directions[d].first;
+                int dirCol = directions[d].second;
 
-                int nextRow = row + deltaRow;
-                int nextCol = col + deltaCol;
+                int nextRow = row + dirRow;
+                int nextCol = col + dirCol;
 
                 if (!isValid(nextRow, nextCol)) continue;
 
@@ -82,50 +82,40 @@ void solve() {
                 vector<pair<int, int> > possibleDominoes;
 
                 if (value1 != -1 && value2 != -1) {
-                    int minVal = min(value1, value2);
-                    int maxVal = max(value1, value2);
-                    possibleDominoes.push_back(make_pair(minVal, maxVal));
-                }
-                else if (value1 == -1 && value2 == -1) {
+                    int a = min(value1, value2);
+                    int b = max(value1, value2);
+                    possibleDominoes.push_back(make_pair(a, b));
+                } else if (value1 == -1 && value2 == -1) {
                     for (int i = 0; i <= 6; ++i)
                         for (int j = i; j <= 6; ++j)
                             possibleDominoes.push_back(make_pair(i, j));
-                }
-                else {
+                } else {
                     int known = (value1 != -1) ? value1 : value2;
                     for (int i = 0; i <= 6; ++i) {
-                        int minVal = min(known, i);
-                        int maxVal = max(known, i);
-                        possibleDominoes.push_back(make_pair(minVal, maxVal));
+                        int a = min(known, i);
+                        int b = max(known, i);
+                        possibleDominoes.push_back(make_pair(a, b));
                     }
                 }
 
-                for (int i = 0; i < possibleDominoes.size(); ++i) {
-                    int a = possibleDominoes[i].first;
-                    int b = possibleDominoes[i].second;
+                for (int k = 0; k < possibleDominoes.size(); ++k) {
+                    int a = possibleDominoes[k].first;
+                    int b = possibleDominoes[k].second;
 
                     if (usedDominoes[a][b]) continue;
 
                     int prev1 = value1;
                     int prev2 = value2;
 
-                    if (value1 == -1) {
+                    if (value1 == -1)
                         grid[row][col] = (value2 == -1 || value2 == b) ? a : b;
-                    }
 
-                    if (value2 == -1) {
+                    if (value2 == -1)
                         grid[nextRow][nextCol] = (grid[row][col] == a) ? b : a;
-                    }
 
                     usedCell[row][col] = true;
                     usedCell[nextRow][nextCol] = true;
-
-                    int valA = grid[row][col];
-                    int valB = grid[nextRow][nextCol];
-                    int minVal = min(valA, valB);
-                    int maxVal = max(valA, valB);
-
-                    usedDominoes[minVal][maxVal] = true;
+                    usedDominoes[a][b] = true;
 
                     solve();
 
@@ -133,7 +123,7 @@ void solve() {
                     grid[nextRow][nextCol] = prev2;
                     usedCell[row][col] = false;
                     usedCell[nextRow][nextCol] = false;
-                    usedDominoes[minVal][maxVal] = false;
+                    usedDominoes[a][b] = false;
                 }
 
                 placed = true;
@@ -142,15 +132,22 @@ void solve() {
     }
 
     if (!placed) {
+        ++solutions;
         cout << "═════════════════════════════════════════════════════════════\n";
-        cout << "                    🟢 ЗНАЙДЕНО РІШЕННЯ #" << ++solutions << ":\n";
-        printGrid();
+        cout << "                    🟢 ЗНАЙДЕНО РІШЕННЯ #" << solutions << ":\n";
+        printGrid(cout);
         int usedCount = 0;
         for (int i = 0; i <= 6; ++i)
             for (int j = i; j <= 6; ++j)
                 if (usedDominoes[i][j]) ++usedCount;
         cout << "   🔢 Кількість використаних доміно: " << usedCount << "\n";
         cout << "═════════════════════════════════════════════════════════════\n\n";
+
+        outFile << "═════════════════════════════════════════════════════════════\n";
+        outFile << "                    🟢 ЗНАЙДЕНО РІШЕННЯ #" << solutions << ":\n";
+        printGrid(outFile);
+        outFile << "   🔢 Кількість використаних доміно: " << usedCount << "\n";
+        outFile << "═════════════════════════════════════════════════════════════\n\n";
     }
 }
 
@@ -170,10 +167,12 @@ void printHeader() {
 int main() {
     printHeader();
     solve();
-    if (solutions == 0) {
+    if (solutions == 0)
         cout << "❌ Рішень не знайдено.\n";
-    } else {
+    else
         cout << "✅ Загальна кількість рішень: " << solutions << "\n";
-    }
+
+    outFile << "✅ Загальна кількість рішень: " << solutions << "\n";
+    outFile.close();
     return 0;
 }
