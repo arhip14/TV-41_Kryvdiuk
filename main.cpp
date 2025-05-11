@@ -190,7 +190,7 @@ bool solve_puzzle(vector<vector<int>>& grid, const set<pair<int, int>>& all_domi
 }
 
 void print_grid(const vector<vector<int>>& grid, ostream& os) {
-    os << "\n==================== SOLUTION ====================\n";
+    os << "\n==================== Рішення ====================\n";
     for (const auto& row : grid) {
         for (int val : row) {
             if (val != -2) {
@@ -222,7 +222,7 @@ void printHeader() {
 int main() {
     printHeader();
     ofstream output("output.txt");
-    vector<vector<int>> initial_grid = {
+        vector<vector<int>> initial_grid = {
         {3, 6, -2, -2, -2, 0, 1, 1, 3, 0, 1, 5, 5},
         {6, 2, -2, -1, -2, 0, 4, 5, -1, 6, 1, 6, 2},
         {0, 4, -2, 0, -2, 6, 5, 6, 1, -1, 3, -2, -2},
@@ -238,22 +238,69 @@ int main() {
         }
     }
 
-    vector<vector<int>> solved_grid = initial_grid;
+    vector<vector<int>> grid;
     set<pair<int, int>> used_dominoes_main;
 
-    cout << "Starting to solve the puzzle...\n";
-
-    if (solve_puzzle(solved_grid, all_dominoes, used_dominoes_main)) {
-        cout << "\n🎉 Solution found!" << endl;
-        print_grid(solved_grid, cout);
-        print_grid(solved_grid, output);
-    } else {
-        cout << "❌ No solution found." << endl;
-        output << "❌ No solution found." << endl;
+    int choice = 0;
+    while (true) {
+        cout << "\n==================== Меню ====================\n";
+        cout << "1 - Ввести самостійно\n";
+        cout << "2 - Введені програмою значення\n";
+        cout << "3 - Вихід\n";
+        cout << "=============================================\n";
+        cout << "Виберіть (1, 2, або 3): ";
+        
+        cin >> choice;
+    
+        cout << "\n";
+    
+        if (choice == 1) {
+            grid.clear();
+            int rows, cols;
+            cout << "Введіть кількість стовпців: ";
+            cin >> rows;
+            cout << "Введіть кількість колонок: ";
+            cin >> cols;
+    
+            grid.resize(rows, vector<int>(cols, -1)); 
+            cout << "Введіть значення поля(значення від 0 до 6, -1 для втрачених значень :\n";
+            cout << "-2 для пустих клітинок) \n";
+            for (int r = 0; r < rows; ++r) {
+                for (int c = 0; c < cols; ++c) {
+                    cin >> grid[r][c];
+                }
+            }
+    
+            cout << "\n Початок вирішення...\n";
+            if (solve_puzzle(grid, all_dominoes, used_dominoes_main)) {
+                cout << "\n🎉 Рішення знайдено!\n";
+                print_grid(grid, cout);
+                print_grid(grid, output);
+            } else {
+                cout << "❌ Не знайдено рішення.\n";
+                output << "❌ Не знайдено рішення.\n";
+            }
+    
+        } else if (choice == 2) {
+            vector<vector<int>> solved_grid = initial_grid;
+            set<pair<int, int>> used_dominoes_main;
+    
+            cout << "Початок вирішення...n";
+            if (solve_puzzle(solved_grid, all_dominoes, used_dominoes_main)) {
+                cout << "\n🎉 Рішення знайдено!\n";
+                print_grid(solved_grid, cout);
+                print_grid(solved_grid, output);
+            } else {
+                cout << "❌ Не знайдено рішення.\n";
+                output << "❌ Не знайдено рішення.\n";
+            }
+    
+        } else if (choice == 3) {
+            cout << "Вихід з програми...\n";
+            break;
+    
+        } else {
+            cout << "Неправильний ввід.\n";
+        }
     }
-
-    output.close();
-    cout << "\nSolution written to 'output.txt'.\n";
-    return 0;
 }
-
