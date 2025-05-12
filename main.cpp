@@ -46,35 +46,43 @@ private:
 /* ---------------------------------------------------------------------[<]-
       Повертає пару чисел у порядку зростання.
  ---------------------------------------------------------------------[>]-*/
-     pair<int, int> myMinMax(int a, int b) {
-        if (a < b) return {a, b};
-        return {b, a};
+    pair<int, int> myMinMax(int a, int b) {
+        // Повертає пару чисел у порядку зростання через звичайний if
+        if (a < b) {
+            return {a, b};
+        } else {
+            return {b, a};
+        }
     }
 /* ---------------------------------------------------------------------[<]-
      Додає пару до множини, якщо її ще немає.
 ---------------------------------------------------------------------[>]-*/
     void insertPair(set<pair<int, int>>& s, pair<int, int> p) {
-        if (s.find(p) == s.end()) {
+        // Додаємо пару, якщо її ще немає (простий спосіб)
+        if (!s.count(p)) {
             s.insert(p);
         }
     }
 /* ---------------------------------------------------------------------[<]-
       Перевіряє, чи можна вставити значення в обрану клітинку.
 ---------------------------------------------------------------------[>]-*/
-     bool isValid(int row, int col, int value) {
+    bool isValid(int row, int col, int value) {
+        // Ця функція перевіряє, чи можна тут поставити число
         if (value < MIN_VALUE || value > MAX_VALUE) {
             return false;
         }
         int rows = grid.size();
         int cols = (rows > 0) ? grid[0].size() : 0;
-        int dr[] = {-1, 1, 0, 0};
-        int dc[] = {0, 0, -1, 1};
-        for (int i = 0; i < 4; ++i) {
-            int nr = row + dr[i];
-            int nc = col + dc[i];
-            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
-                if (grid[nr][nc] >= MIN_VALUE && grid[nr][nc] <= MAX_VALUE) {
-                    pair<int, int> domino = myMinMax(value, grid[nr][nc]);
+        // Масиви для напрямків: вгору, вниз, вліво, вправо
+        int dr[4] = {-1, 1, 0, 0}; // напрямки: вгору, вниз, вліво, вправо
+        int dc[4] = {0, 0, -1, 1};
+        // Перебираємо всі 4 напрямки
+        for (int i = 0; i < 4; i++) {
+            int newRow = row + dr[i];
+            int newCol = col + dc[i];
+            if (newRow >= 0 && newRow < rows && newCol >= 0 && newCol < cols) {
+                if (grid[newRow][newCol] >= MIN_VALUE && grid[newRow][newCol] <= MAX_VALUE) {
+                    pair<int, int> domino = myMinMax(value, grid[newRow][newCol]);
                     if (allDominoes.count(domino) && usedDominoes.count(domino)) {
                         return false;
                     }
@@ -175,51 +183,47 @@ public:
             for (int c = 0; c < grid[r].size(); ++c) {
                 int val = grid[r][c];
                 if (val != EMPTY) {
+                    // Кольорове виділення для autoInserted (зелений)
                     if (autoInserted.count({r, c})) {
-                        os << "\033[32m" << setw(3) << val << "\033[0m";
+                        os << "\033[32m" << val << "\033[0m ";
                     } else {
-                        os << setw(3) << val;
+                        os << val << " ";
                     }
                 } else {
-                    os << "   ";
+                    os << "  ";
                 }
             }
             os << endl;
         }
         os << "==================================================\n";
-    }
-
-    // Додаємо окрему функцію для виведення у файл (без кольорів)
-    void printGridToFile(ostream& os) {
-        os << "\n==================== Рішення ====================\n";
-        for (int r = 0; r < grid.size(); ++r) {
-            for (int c = 0; c < grid[r].size(); ++c) {
-                int val = grid[r][c];
-                if (val != EMPTY) {
-                    os << setw(3) << val;
-                } else {
-                    os << "   ";
-                }
-            }
-            os << endl;
+        // Додаємо секцію з використаними доміно
+        os << "\nВикористані доміно:\n";
+        for (const auto& d : usedDominoes) {
+            os << "Доміно: {"
+               << "\033[32m" << d.first << "\033[0m"
+               << ", "
+               << "\033[32m" << d.second << "\033[0m"
+               << "}\n";
         }
-        os << "==================================================\n";
     }
 /* ---------------------------------------------------------------------[<]-
      Рекурсивно вирішує головоломку методом перебору.
  ---------------------------------------------------------------------[>]-*/
      bool solvePuzzle() {
+        // Ця функція намагається розв'язати головоломку рекурсивно
         bool changed = true;
         while (changed) {
             changed = false;
-            for (int r = 0; r < grid.size(); ++r) {
-                for (int c = 0; c < grid[r].size(); ++c) {
+            for (int r = 0; r < grid.size(); r++) {
+                for (int c = 0; c < grid[r].size(); c++) {
                     if (grid[r][c] >= MIN_VALUE && grid[r][c] <= MAX_VALUE) {
-                        int dr[] = {-1, 1, 0, 0};
-                        int dc[] = {0, 0, -1, 1};
+                        // Масиви для напрямків: вгору, вниз, вліво, вправо
+                        int dr[4] = {-1, 1, 0, 0}; // напрямки: вгору, вниз, вліво, вправо
+                        int dc[4] = {0, 0, -1, 1};
                         int missing_neighbor_r = -1, missing_neighbor_c = -1;
                         int neighbor_count = 0;
-                        for (int i = 0; i < 4; ++i) {
+                        // Перебираємо всі 4 напрямки
+                        for (int i = 0; i < 4; i++) {
                             int nr = r + dr[i];
                             int nc = c + dc[i];
                             if (nr >= 0 && nr < grid.size() && nc >= 0 && nc < grid[nr].size()) {
@@ -234,22 +238,23 @@ public:
                         }
                         if (neighbor_count < 2 && missing_neighbor_r != -1) {
                             set<int> possible_values;
-                            for (int v = MIN_VALUE; v <= MAX_VALUE; ++v) {
+                            for (int v = MIN_VALUE; v <= MAX_VALUE; v++) {
+                                // Пробуємо всі можливі значення для сусідньої клітинки
                                 vector<vector<int>> temp_grid = grid;
                                 temp_grid[missing_neighbor_r][missing_neighbor_c] = v;
                                 pair<int, int> domino = myMinMax(grid[r][c], v);
-                                if (allDominoes.count(domino) && usedDominoes.find(domino) == usedDominoes.end()) {
+                                if (allDominoes.count(domino) && !usedDominoes.count(domino)) {
                                     possible_values.insert(v);
                                 }
                             }
                             if (possible_values.size() == 1) {
                                 grid[missing_neighbor_r][missing_neighbor_c] = *possible_values.begin();
                                 autoInserted.insert({missing_neighbor_r, missing_neighbor_c});
-                                cout << "➕ Додається доміно: {" << grid[r][c] << ", " << *possible_values.begin() << "}\n";
+                                cout << "➕ Додається доміно: {" << grid[r][c] << ", " << *possible_values.begin() << "} // Додаємо нове доміно\n";
                                 insertPair(usedDominoes, myMinMax(grid[r][c], *possible_values.begin()));
                                 pair<int, int> domino = myMinMax(grid[r][c], *possible_values.begin());
-                                if (usedDominoes.find(domino) != usedDominoes.end()) {
-                                    cout << "✅ Доміно добавлено: {" << domino.first << ", " << domino.second << "}\n";
+                                if (usedDominoes.count(domino)) {
+                                    cout << "✅ Доміно добавлено: {" << domino.first << ", " << domino.second << "} // Доміно вже у списку використаних\n";
                                 }
                                 changed = true;
                             }
@@ -274,15 +279,18 @@ public:
         if (!canLeadToSolution()) {
             return false;
         }
-        for (int value = MIN_VALUE; value <= MAX_VALUE; ++value) {
+        for (int value = MIN_VALUE; value <= MAX_VALUE; value++) {
             if (isValid(row, col, value)) {
+                // Пробуємо поставити value у цю клітинку
                 vector<vector<int>> temp_grid = grid;
                 temp_grid[row][col] = value;
                 set<pair<int, int>> new_used_dominoes = usedDominoes;
                 bool possible = true;
-                int dr[] = {-1, 1, 0, 0};
-                int dc[] = {0, 0, -1, 1};
-                for (int i = 0; i < 4; ++i) {
+                // Масиви для напрямків: вгору, вниз, вліво, вправо
+                int dr[4] = {-1, 1, 0, 0}; // напрямки: вгору, вниз, вліво, вправо
+                int dc[4] = {0, 0, -1, 1};
+                // Перебираємо всі 4 напрямки
+                for (int i = 0; i < 4; i++) {
                     int nr = row + dr[i];
                     int nc = col + dc[i];
                     if (nr >= 0 && nr < grid.size() && nc >= 0 && nc < grid[nr].size() &&
@@ -292,10 +300,10 @@ public:
                             possible = false;
                             break;
                         } else if (allDominoes.count(domino)) {
-                            cout << "➕ Додається доміно: {" << value << ", " << temp_grid[nr][nc] << "}\n";
+                            cout << "➕ Додається доміно: {" << value << ", " << temp_grid[nr][nc] << "} // Додаємо доміно для цієї пари\n";
                             insertPair(new_used_dominoes, domino);
-                            if (new_used_dominoes.find(domino) != new_used_dominoes.end()) {
-                                cout << "✅ Доміно добавлено: {" << domino.first << ", " << domino.second << "}\n";
+                            if (new_used_dominoes.count(domino)) {
+                                cout << "✅ Доміно добавлено: {" << domino.first << ", " << domino.second << "} // Доміно тепер у списку використаних\n";
                             }
                         }
                     }
@@ -303,15 +311,15 @@ public:
                 if (possible) {
                     grid[row][col] = value;
                     autoInserted.insert({row, col});
-                    cout << "Спроба вставити " << value << " у клітинку (" << row << ", " << col << ")\n";
+                    cout << "Спроба вставити " << value << " у клітинку (" << row << ", " << col << ") // Показує, що ми намагаємось поставити це число\n";
                     set<pair<int, int>> backup_used = usedDominoes;
                     set<pair<int, int>> backup_autoInserted = autoInserted;
                     usedDominoes = new_used_dominoes;
                     if (solvePuzzle()) {
-                        cout << "✅ Вдалось вставити " << value << " у (" << row << ", " << col << ")\n";
+                        cout << "✅ Вдалось вставити " << value << " у (" << row << ", " << col << ") // Число успішно вставлено\n";
                         return true;
                     }
-                    cout << "↩️ Відкат вставки " << value << " з клітинки (" << row << ", " << col << ")\n";
+                    cout << "↩️ Відкат вставки " << value << " з клітинки (" << row << ", " << col << ") // Відміняємо цю спробу\n";
                     grid[row][col] = MISSING;
                     usedDominoes = backup_used;
                     autoInserted = backup_autoInserted;
@@ -338,7 +346,7 @@ public:
         bool found = solvePuzzle();
         if (found) {
             os << "\n🎉 Рішення знайдено!\n";
-            printGridToFile(os);
+            printGrid(os);
             os << "\n🔍 Перевірка використаних доміно...\n";
             os << "✅ Кількість використаних доміно: " << usedDominoes.size() << " (очікується: " << TOTAL_DOMINOES << ")\n";
             for (const auto& d : usedDominoes) {
@@ -368,7 +376,6 @@ void printHeader() {
     cout << "║  Намалюйте лінії, щоб відзначити становище кожного доміно.     ║\n";
     cout << "╚════════════════════════════════════════════════════════════════╝\n\n";
     cout << ">> Натисніть Enter, щоб почати пошук рішень...\n";
-    cin.ignore();
 }
 
 
@@ -379,6 +386,7 @@ void printHeader() {
  ---------------------------------------------------------------------[>]-*/
 int main() {
     printHeader();
+    cin.ignore();
     ofstream output("output.txt");
     vector<vector<int>> initial_grid = {
         {3, 6, EMPTY, EMPTY, EMPTY, 0, 1, 1, 3, 0, 1, 5, 5},
@@ -388,7 +396,6 @@ int main() {
         {6, 4, 2, 4, 4, 3, 5, 2, EMPTY, EMPTY, 5, 0, 1},
         {EMPTY, EMPTY, 1, MISSING, 4, EMPTY, EMPTY, MISSING, EMPTY, EMPTY, 1, 4, 2}
     };
-
     vector<vector<int>> grid;
     int choice = 0;
     while (true) {
@@ -405,47 +412,30 @@ int main() {
             cout << "❌ Невірний вибір. Спробуйте ще раз.\n";
             continue;
         }
-        if (choice < 1 || choice > 3) {
-            cout << "❌ Невірний вибір. Спробуйте ще раз.\n";
-            continue;
-        }
-        cout << "\n";
         if (choice == 1) {
             grid.clear();
             int rows, cols;
             cout << "Введіть кількість рядків: ";
             cin >> rows;
-            if (cin.fail()) {
-                cin.clear();
-                cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                cout << "❌ Невірний вибір. Спробуйте ще раз.\n";
-                continue;
-            }
             cout << "Введіть кількість стовпців: ";
             cin >> cols;
-            if (cin.fail()) {
+            if (cin.fail() || rows <= 0 || cols <= 0 || rows * cols > MAX_GRID_CELLS) {
                 cin.clear();
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                cout << "❌ Невірний вибір. Спробуйте ще раз.\n";
-                continue;
-            }
-            if (rows <= 0 || cols <= 0 || rows * cols > MAX_GRID_CELLS) {
                 cout << "❌ Недопустимий розмір поля. Спробуйте знову.\n";
                 continue;
             }
             grid.resize(rows, vector<int>(cols, MISSING));
-            cout << "Введіть значення поля (значення від " << MIN_VALUE << " до " << MAX_VALUE << ", " << MISSING << " для втрачених значень, " << EMPTY << " для пустих клітинок):\n";
-            for (int r = 0; r < rows; ++r) {
+            cout << "Введіть значення поля (від " << MIN_VALUE << " до " << MAX_VALUE << ", " << MISSING << " для втрачених, " << EMPTY << " для пустих):\n";
+            for (int r = 0; r < rows; ++r)
                 for (int c = 0; c < cols; ++c) {
                     int val;
                     while (true) {
                         cout << "Клітинка [" << r << "][" << c << "]: ";
                         cin >> val;
-                        if (cin.fail()) {
+                        if (cin.fail() || val < EMPTY || val > MAX_VALUE) {
                             cin.clear();
                             cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                            cout << "❌ Невірне значення. Введіть число від " << EMPTY << " до " << MAX_VALUE << ".\n";
-                        } else if (val < EMPTY || val > MAX_VALUE) {
                             cout << "❌ Невірне значення. Введіть число від " << EMPTY << " до " << MAX_VALUE << ".\n";
                         } else {
                             grid[r][c] = val;
@@ -453,8 +443,7 @@ int main() {
                         }
                     }
                 }
-            }
-            cout << "\n Початок вирішення...\n";
+            cout << "\nПочаток вирішення...\n";
             DominoSolver solver(grid);
             solver.solve(output);
         } else if (choice == 2) {
@@ -464,6 +453,8 @@ int main() {
         } else if (choice == 3) {
             cout << "Вихід з програми...\n";
             break;
+        } else {
+            cout << "❌ Невірний вибір. Спробуйте ще раз.\n";
         }
     }
 }
