@@ -58,11 +58,7 @@ bool is_valid(const vector<vector<int>>& grid, int row, int col, int value) {
     for (int i = 0; i < 4; ++i) {
         int nr = row + dr[i];
         int nc = col + dc[i];
-        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && grid[nr][nc] >= 0) {
-            // Сусідня клітинка вже заповнена, але ми не перевіряємо конфлікти тут,
-            // бо функція is_valid лише перевіряє, чи значення знаходиться в допустимому діапазоні
-            // і чи взагалі можливе для заповнення (без додаткових обмежень на унікальність доміно).
-        }
+
     }
     return true;  // Якщо жодних конфліктів не виявлено, повертаємо true
 }
@@ -100,6 +96,8 @@ pair<int, int> find_next_missing(const vector<vector<int>>& grid) {
  Функція: get_formed_dominoes
  Опис: Повертає множину всіх утворених доміно на полі.
  ---------------------------------------------------------------------[>]-*/
+ void draw_domino_lines(const vector<vector<int>>& grid, int r1, int c1, int r2, int c2);
+ 
 set<pair<int, int>> get_formed_dominoes(const vector<vector<int>>& grid) {
     set<pair<int, int>> formed;
     int rows = grid.size();
@@ -110,10 +108,14 @@ set<pair<int, int>> get_formed_dominoes(const vector<vector<int>>& grid) {
         for (int c = 0; c < cols; ++c) {
             if (grid[r][c] != -2) {  // Якщо клітинка не пуста
                 if (c + 1 < cols && grid[r][c + 1] != -2) {  // Перевірка правого сусіда
-                    insert_pair(formed, my_minmax(grid[r][c], grid[r][c + 1]));
+                    pair<int, int> domino = my_minmax(grid[r][c], grid[r][c + 1]);
+                    insert_pair(formed, domino);
+                    draw_domino_lines(grid, r, c, r, c + 1);
                 }
                 if (r + 1 < rows && grid[r + 1][c] != -2) {  // Перевірка нижнього сусіда
-                    insert_pair(formed, my_minmax(grid[r][c], grid[r + 1][c]));
+                    pair<int, int> domino = my_minmax(grid[r][c], grid[r + 1][c]);
+                    insert_pair(formed, domino);
+                    draw_domino_lines(grid, r, c, r + 1, c);
                 }
             }
         }
@@ -135,6 +137,7 @@ bool is_solution(const vector<vector<int>>& grid, const set<pair<int, int>>& all
  Опис: Перевіряє, чи поточне поле ще може привести до правильного розв'язку.
  ---------------------------------------------------------------------[>]-*/
 bool can_lead_to_solution(const vector<vector<int>>& grid, const set<pair<int, int>>& all_dominoes) {
+    cout << "🔍 Перевірка можливості рішення на поточному полі\n";
     int filled_count = 0;
     for (const auto& row : grid) {
         for (int val : row) {
@@ -191,7 +194,12 @@ bool solve_puzzle(vector<vector<int>>& grid, const set<pair<int, int>>& all_domi
                         }
                         if (possible_values.size() == 1) {
                             grid[missing_neighbor_r][missing_neighbor_c] = *possible_values.begin();
+                            cout << "➕ Додається доміно: {" << grid[r][c] << ", " << *possible_values.begin() << "}\n";
                             insert_pair(used_dominoes, my_minmax(grid[r][c], *possible_values.begin()));
+                            pair<int, int> domino = my_minmax(grid[r][c], *possible_values.begin());
+                            if (used_dominoes.find(domino) != used_dominoes.end()) {
+                                cout << "✅ Доміно добавлено: {" << domino.first << ", " << domino.second << "}\n";
+                            }
                             changed = true;
                         }
                     }
@@ -205,6 +213,14 @@ bool solve_puzzle(vector<vector<int>>& grid, const set<pair<int, int>>& all_domi
     int col = next_missing.second;
 
     if (row == -1) {
+        if (is_solution(grid, all_dominoes)) {
+            cout << "✅ Рішення знайдено!\n";
+            // --- Domino usage check ---
+            cout << "✅ Кількість використаних доміно: " << used_dominoes.size() << " (очікується: 28)\n";
+            for (const auto& d : used_dominoes) {
+                cout << "Доміно: {" << d.first << "," << d.second << "}\n";
+            }
+        }
         return is_solution(grid, all_dominoes);  // Перевірка, чи заповнено все коректно
     }
 
@@ -229,16 +245,25 @@ bool solve_puzzle(vector<vector<int>>& grid, const set<pair<int, int>>& all_domi
                         possible = false;
                         break;
                     } else if (all_dominoes.count(domino)) {
+                        cout << "➕ Додається доміно: {" << value << ", " << temp_grid[nr][nc] << "}\n";
                         insert_pair(new_used_dominoes, domino);
+                        if (new_used_dominoes.find(domino) != new_used_dominoes.end()) {
+                            cout << "✅ Доміно добавлено: {" << domino.first << ", " << domino.second << "}\n";
+                        }
                     }
                 }
             }
 
             if (possible) {
                 grid[row][col] = value;
+                // Вивід поточного кроку підбору значення
+                cout << "Спроба вставити " << value << " у клітинку (" << row << ", " << col << ")\n";
                 if (solve_puzzle(grid, all_dominoes, new_used_dominoes)) {
+                    cout << "✅ Вдалось вставити " << value << " у (" << row << ", " << col << ")\n";
                     return true;
                 }
+                // Якщо не вдалося, відкат
+                cout << "↩️ Відкат вставки " << value << " з клітинки (" << row << ", " << col << ")\n";
                 grid[row][col] = -1;
             }
         }
@@ -250,7 +275,7 @@ bool solve_puzzle(vector<vector<int>>& grid, const set<pair<int, int>>& all_domi
  Функція: print_grid
  Опис: Виводить поточний стан поля в консоль або у файл.
  ---------------------------------------------------------------------[>]-*/
-void print_grid(const vector<vector<int>>& grid, ostream& os) {
+ void print_grid(const vector<vector<int>>& grid, ostream& os) {
     os << "\n==================== Рішення ====================\n";
     for (const auto& row : grid) {
         for (int val : row) {
@@ -283,6 +308,16 @@ void printHeader() {
     cin.ignore();
     cout << "\n⏳ Виконується обчислення...\n\n";
 }
+
+void draw_domino_lines(const vector<vector<int>>& grid, int r1, int c1, int r2, int c2) {
+    // Draw a line between two connected cells (either horizontally or vertically)
+    if (r1 == r2) {  // Horizontal domino
+        cout << "Намальовано лінію між клітинками (" << r1 << "," << c1 << ") та (" << r2 << "," << c2 << ")\n";
+    } else if (c1 == c2) {  // Vertical domino
+        cout << "Намальовано лінію між клітинками (" << r1 << "," << c1 << ") та (" << r2 << "," << c2 << ")\n";
+    }
+}
+
 
 /* ---------------------------------------------------------------------[<]-
  Функція: main
@@ -345,6 +380,11 @@ int main() {
                 cout << "\n🎉 Рішення знайдено!\n";
                 print_grid(grid, cout);
                 print_grid(grid, output);
+                cout << "\n🔍 Перевірка використаних доміно...\n";
+                cout << "✅ Кількість використаних доміно: " << used_dominoes_main.size() << " (очікується: 28)\n";
+                for (const auto& d : used_dominoes_main) {
+                    cout << "Доміно: {" << d.first << "," << d.second << "}\n";
+                }
             } else {
                 cout << "❌ Не знайдено рішення.\n";
                 output << "❌ Не знайдено рішення.\n";
@@ -352,13 +392,15 @@ int main() {
 
         } else if (choice == 2) {
             vector<vector<int>> solved_grid = initial_grid;
-            set<pair<int, int>> used_dominoes_main;
 
             cout << "Початок вирішення...\n";
             if (solve_puzzle(solved_grid, all_dominoes, used_dominoes_main)) {
                 cout << "\n🎉 Рішення знайдено!\n";
                 print_grid(solved_grid, cout);
                 print_grid(solved_grid, output);
+                for (const auto& d : used_dominoes_main) {
+                    cout << "Доміно: {" << d.first << "," << d.second << "}\n";
+                }
             } else {
                 cout << "❌ Не знайдено рішення.\n";
                 output << "❌ Не знайдено рішення.\n";
