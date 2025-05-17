@@ -1,6 +1,6 @@
 .vscode/
-main
-main.dSYM/
+task16
+task16.dSYM/
 *.o
 *.out
 *.exe
