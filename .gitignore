@@ -4,3 +4,4 @@ task16.dSYM/
 *.o
 *.out
 *.exe
+.DS_Store
